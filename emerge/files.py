@@ -55,6 +55,7 @@ class LanguageExtension(Enum):
     OBJC = '.m'
     RUBY = '.rb'
     C_HEADER = '.h'
+    CPP_HEADER = '.hpp'
     PYTHON = '.py'
     GO = '.go'
 
@@ -109,7 +110,7 @@ class FileScanMapper:
             return PythonParser.parser_name()
         if file_extension == LanguageExtension.GO.value:
             return GoParser.parser_name()
-        if file_extension == LanguageExtension.C_HEADER.value:
+        if file_extension == LanguageExtension.C_HEADER.value or LanguageExtension.CPP_HEADER.value:
             if only_permit_languages:
                 if 'objc' in only_permit_languages:
                     return ObjCParser.parser_name()
@@ -138,13 +139,13 @@ class FileManager:
         if os.path.isdir(target_complete_path):
             try:
                 shutil.rmtree(target_complete_path)
-                
+
             except Exception as ex: # pylint: disable=broad-except
                 LOGGER.error(f'{ex}')
         try:
             shutil.copytree(origin_complete_path, target_complete_path)
             LOGGER.info_done("generated d3 web app for your browser")
-            
+
         except Exception as ex: # pylint: disable=broad-except
             LOGGER.error(f'{ex}')
 
