@@ -144,7 +144,7 @@ You can simply install emerge by using `pip`.
 On Ubuntu 20.04+ pleaase make sure that the packages `graphviz` and `graphviz-dev` are installed, i.e.
 
 ```text
-apt-get install graphviz graphviz-dev 
+apt-get install graphviz graphviz-dev
 ```
 
 ### 1️⃣.2️⃣ ~ Install with pip
@@ -195,7 +195,7 @@ You can create a simple project config adhoc from the command line and then simp
 and then simply adjust the necessary paths (`analyses/source_directory` and `export/directory`):
 
 ```text
-(emerge) user@host tmp % cat java-template.yaml 
+(emerge) user@host tmp % cat java-template.yaml
 ---
 project_name: java_project_example
 loglevel: info
@@ -349,7 +349,7 @@ If you got in any trouble executing the tests, check [this woraround](https://gi
 ### 6️⃣ ~ Running `emerge` as a standalone tool
 
 ```text
-(emerge) user@host emerge % python emerge.py 
+(emerge) user@host emerge % python emerge.py
 usage: emerge.py [-h] [-c YAMLCONFIG] [-v] [-d] [-e] [-a LANGUAGE]
 
 🔎 Welcome to emerge x.y.z (yyyy-mm-dd hh:mm:ss)
@@ -643,8 +643,8 @@ Emerge supports the following file extensions and scan types per language, where
 |---------------------------|-----------------|-------|---------
 | `.java`                   | Java            | ✅ | ✅
 | `.swift`                  | Swift           | ✅ | ✅
-| `.c` / `.h`               | C               | ✅ | ❌
-| `.cpp` / `.h`             | C++             | ✅ | ❌
+| `.c` / `.h` / `.hpp`      | C               | ✅ | ❌
+| `.cpp` / `.h` / `.hpp`    | C++             | ✅ | ❌
 | `.groovy`                 | Groovy          | ✅ | ✅
 | `.js` / `.jsx`            | JavaScript      | ✅ | ❌
 | `.ts` / `.tsx`            | TypeScript      | ✅ | ❌
