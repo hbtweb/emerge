@@ -5,9 +5,11 @@ All analyses get started from here.
 # Authors: Grzegorz Lato <grzegorz.lato@gmail.com>
 # License: MIT
 
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 from pathlib import Path
 import logging
+import signal
+import sys
 
 import coloredlogs
 
@@ -21,11 +23,12 @@ from emerge.analysis import Analysis
 from emerge.graph import GraphType
 from emerge.abstractresult import AbstractResult
 from emerge.log import Logger, LogLevel
+from emerge.graph_cache import GraphCache, get_cache
 
 LOGGER = Logger(logging.getLogger('emerge'))
 coloredlogs.install(level='E', logger=LOGGER.logger(), fmt=Logger.log_format)
 
-__version__ = '2.1.0'
+__version__ = '2.2.0'
 __updated__ = '2025-12-17'
 
 
@@ -215,6 +218,22 @@ class Emerge:
             '.dart_tool', '.pub-cache'
         ]
 
+        # Check cache first (if enabled)
+        cache = get_cache(output_path / '.emerge_cache')
+
+        if self.config.use_cache:
+            source_hash = cache.compute_source_hash(scan_path, set(extensions))
+            cached = cache.load(source_hash)
+
+            if cached:
+                LOGGER.info('Using cached analysis (source unchanged)')
+                if self.config.watch_mode or self.config.mcp_mode or self.config.websocket_mode:
+                    self._start_live_mode(scan_path, cached.graphs, extensions)
+                else:
+                    LOGGER.info(f'Cached graphs: {list(cached.graphs.keys())}')
+                    LOGGER.info('Run with --no-cache to force rebuild')
+                return
+
         # Add analysis to config and mark as valid
         self.config.analyses = [analysis]
         self.config.project_name = scan_path.name
@@ -222,6 +241,74 @@ class Emerge:
 
         # Start analyzing
         self.start_analyzing()
+
+        # Cache results after analysis
+        if self.config.use_cache and self.config.analyses:
+            completed = self.config.analyses[0]
+            source_hash = cache.compute_source_hash(scan_path, set(extensions))
+            cache.save(completed, source_hash)
+            LOGGER.info('Analysis cached for future runs')
+
+        # Start live modes if requested
+        if self.config.watch_mode or self.config.mcp_mode or self.config.websocket_mode:
+            graphs = {
+                name: repr.digraph
+                for name, repr in self.config.analyses[0].graph_representations.items()
+                if repr is not None
+            }
+            self._start_live_mode(scan_path, graphs, extensions)
+
+    def _start_live_mode(self, scan_path: Path, graphs: Dict, extensions: list):
+        """Start live mode services (watch, MCP, WebSocket)."""
+        watcher = None
+        ws_server = None
+
+        def shutdown(sig=None, frame=None):
+            LOGGER.info('Shutting down...')
+            if watcher:
+                watcher.stop()
+            if ws_server:
+                ws_server.stop()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, shutdown)
+        signal.signal(signal.SIGTERM, shutdown)
+
+        # Start WebSocket server
+        if self.config.websocket_mode:
+            from emerge.websocket_server import GraphWebSocketServer
+            ws_server = GraphWebSocketServer(port=self.config.websocket_port, graphs=graphs)
+            ws_server.start()
+            LOGGER.info(f'WebSocket server: ws://localhost:{self.config.websocket_port}')
+
+        # Start file watcher
+        if self.config.watch_mode:
+            from emerge.watcher import GraphWatcher
+            watcher = GraphWatcher(scan_path, extensions=set(extensions))
+            watcher.graphs = graphs
+            if ws_server:
+                watcher.add_listener(ws_server.broadcast_update)
+            watcher.start()
+            LOGGER.info(f'Watching: {scan_path}')
+
+        # Start MCP server (blocking)
+        if self.config.mcp_mode:
+            from emerge import mcp_server
+            mcp_server._graphs = graphs
+            mcp_server._source_dir = scan_path
+            LOGGER.info('Starting MCP server (stdio)...')
+            mcp_server.run_server(transport="stdio")
+            return
+
+        # Keep alive for watch/websocket
+        if self.config.watch_mode or self.config.websocket_mode:
+            LOGGER.info('Press Ctrl+C to stop')
+            import time
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                shutdown()
 
     def start_with_log_level(self, level: LogLevel):
         """Sets a custom log level and starts emerge.

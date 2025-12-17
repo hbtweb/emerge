@@ -157,6 +157,12 @@ class Configuration:
         # Auto-scan mode attributes
         self.scan_path: Optional[str] = None
         self.output_dir: str = "./emerge-output"
+        # Live mode attributes
+        self.watch_mode: bool = False
+        self.mcp_mode: bool = False
+        self.websocket_mode: bool = False
+        self.websocket_port: int = 8765
+        self.use_cache: bool = True
 
     def _get_own__dict__(self):
         return self.__dict__
@@ -186,6 +192,39 @@ class Configuration:
             '--output',
             dest='output_dir',
             help='output directory for results (default: ./emerge-output)'
+        )
+        # Live mode flags
+        self.arg_parser.add_argument(
+            '-w',
+            '--watch',
+            dest='watch',
+            action='store_true',
+            help='watch mode: monitor files and update graphs in real-time'
+        )
+        self.arg_parser.add_argument(
+            '--mcp',
+            dest='mcp',
+            action='store_true',
+            help='start MCP server for AI assistant integration'
+        )
+        self.arg_parser.add_argument(
+            '--websocket',
+            dest='websocket',
+            action='store_true',
+            help='start WebSocket server for D3 live updates'
+        )
+        self.arg_parser.add_argument(
+            '--port',
+            dest='port',
+            type=int,
+            default=8765,
+            help='WebSocket server port (default: 8765)'
+        )
+        self.arg_parser.add_argument(
+            '--no-cache',
+            dest='no_cache',
+            action='store_true',
+            help='disable graph caching (force rebuild)'
         )
 
     def _options_for_value(self, value: str) -> Optional[List]:
@@ -243,6 +282,18 @@ class Configuration:
         if args.error:
             LOGGER.set_logging_level_to_error()
             LOGGER.override_level_from_command_line_arg = True
+
+        # Handle live mode flags
+        if args.watch:
+            self.watch_mode = True
+        if args.mcp:
+            self.mcp_mode = True
+        if args.websocket:
+            self.websocket_mode = True
+        if args.port:
+            self.websocket_port = args.port
+        if args.no_cache:
+            self.use_cache = False
 
         # Auto-scan mode: --scan takes precedence over --config
         if args.scan_path:
