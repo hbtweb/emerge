@@ -45,7 +45,10 @@ class TFIDFMetric(CodeMetric):
             "C":          {'return', 'int', 'static', 'void', 'case', 'break', 'const', 'struct', 'printf', 'fprintf', 'unsigned', 'extern', 'char', 'float', 'sizeof', 'unsinged', 'undef', 'define'},
             "CPP":        {'return', 'int', 'static', 'void', 'case', 'break', 'const', 'struct', 'printf', 'fprintf', 'unsigned', 'extern', 'char', 'float', 'sizeof', 'string', 'bool', 'virtual', 'override', 'nullptr', 'final', 'inline', 'template'},
             "PY":         {'return', 'self', 'import', 'enum', 'true', 'false', 'none', 'class', 'cls', 'super', 'not'},
-            "GO":         {'return', 'nil', 'defer', 'func', 'default'}
+            "GO":         {'return', 'nil', 'defer', 'func', 'default'},
+            "PHP":        {'return', 'function', 'public', 'private', 'protected', 'static', 'final', 'abstract', 'class', 'interface', 'trait', 'extends', 'implements', 'use', 'namespace', 'new', 'throw', 'try', 'catch', 'finally', 'true', 'false', 'null', 'void', 'array', 'string', 'int', 'float', 'bool', 'mixed', 'self', 'parent', 'echo', 'print', 'isset', 'empty', 'unset'},
+            "CLOJURE":    {'defn', 'def', 'let', 'fn', 'if', 'do', 'when', 'cond', 'case', 'loop', 'recur', 'for', 'doseq', 'dotimes', 'nil', 'true', 'false', 'require', 'import', 'ns', 'refer', 'use', 'quote', 'unquote', 'deref', 'atom', 'swap', 'reset', 'cons', 'conj', 'first', 'rest', 'next', 'map', 'filter', 'reduce', 'apply', 'partial', 'comp', 'str', 'println', 'prn'},
+            "DART":       {'return', 'void', 'class', 'extends', 'implements', 'with', 'abstract', 'static', 'final', 'const', 'var', 'dynamic', 'late', 'required', 'factory', 'async', 'await', 'yield', 'sync', 'import', 'export', 'part', 'library', 'show', 'hide', 'as', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'rethrow', 'assert', 'new', 'this', 'super', 'null', 'true', 'false', 'int', 'double', 'string', 'bool', 'list', 'map', 'set', 'object', 'future', 'stream', 'widget', 'buildcontext', 'state', 'override'}
         }
 
         """The following natural language stopwords should be excluded from the TF-IDF calculation."""

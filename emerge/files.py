@@ -15,6 +15,9 @@ import logging
 
 import coloredlogs
 from emerge.languages.goparser import GoParser
+from emerge.languages.phpparser import PHPParser
+from emerge.languages.clojureparser import ClojureParser
+from emerge.languages.dartparser import DartParser
 
 from emerge.languages.javaparser import JavaParser
 from emerge.languages.swiftparser import SwiftParser
@@ -58,6 +61,13 @@ class LanguageExtension(Enum):
     CPP_HEADER = '.hpp'
     PYTHON = '.py'
     GO = '.go'
+    PHP = '.php'
+    CLOJURE = '.clj'
+    CLOJUREC = '.cljc'
+    CLOJURESCRIPT = '.cljs'
+    CLOJUREDART = '.cljd'
+    EDN = '.edn'
+    DART = '.dart'
 
     @staticmethod
     def valid_key(key) -> bool:
@@ -110,6 +120,14 @@ class FileScanMapper:
             return PythonParser.parser_name()
         if file_extension == LanguageExtension.GO.value:
             return GoParser.parser_name()
+        if file_extension == LanguageExtension.PHP.value:
+            return PHPParser.parser_name()
+        if file_extension in (LanguageExtension.CLOJURE.value, LanguageExtension.CLOJUREC.value,
+                              LanguageExtension.CLOJURESCRIPT.value, LanguageExtension.CLOJUREDART.value,
+                              LanguageExtension.EDN.value):
+            return ClojureParser.parser_name()
+        if file_extension == LanguageExtension.DART.value:
+            return DartParser.parser_name()
         if file_extension == LanguageExtension.C_HEADER.value or LanguageExtension.CPP_HEADER.value:
             if only_permit_languages:
                 if 'objc' in only_permit_languages:

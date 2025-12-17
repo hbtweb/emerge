@@ -35,6 +35,9 @@ class LanguageType(Enum):
     CPP = auto()
     PY = auto()
     GO = auto()
+    PHP = auto()
+    CLOJURE = auto()
+    DART = auto()
 
 
 @unique
@@ -51,6 +54,9 @@ class Parser(Enum):
     GROOVY_PARSER = auto()
     PYTHON_PARSER = auto()
     GO_PARSER = auto()
+    PHP_PARSER = auto()
+    CLOJURE_PARSER = auto()
+    DART_PARSER = auto()
 
 
 @unique

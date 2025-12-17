@@ -23,6 +23,9 @@ from emerge.languages.objcparser import ObjCParser
 from emerge.languages.rubyparser import RubyParser
 from emerge.languages.pyparser import PythonParser
 from emerge.languages.goparser import GoParser
+from emerge.languages.phpparser import PHPParser
+from emerge.languages.clojureparser import ClojureParser
+from emerge.languages.dartparser import DartParser
 
 from emerge.config import Configuration
 from emerge.analyzer import Analyzer
@@ -56,7 +59,10 @@ class Emerge:
             ObjCParser.parser_name(): ObjCParser(),
             RubyParser.parser_name(): RubyParser(),
             PythonParser.parser_name(): PythonParser(),
-            GoParser.parser_name(): GoParser()
+            GoParser.parser_name(): GoParser(),
+            PHPParser.parser_name(): PHPParser(),
+            ClojureParser.parser_name(): ClojureParser(),
+            DartParser.parser_name(): DartParser()
         }
 
         self.config.supported_languages = [x.language_type() for x in self._parsers.values()]

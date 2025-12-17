@@ -51,6 +51,9 @@ class NumberOfMethodsMetric(CodeMetric):
             "CPP":        r"\b(?!if|for|while|switch)\b[a-zA-Z\d\_\:\<\>\*\&]+?\s*?\([\(a-zA-Z\d\s_,\*&:]*?\)\s*?\w+\s*?\{",
             "PY":         r"(def)\s.+(.+):",
             "GO":         r"func\s*?[a-zA-Z\d_\(\)\:\*\s\-\<\>\?\,\[\]\.]+?\s*?\{",
+            "PHP":        r"function\s+[a-zA-Z\d_]+\s*\([a-zA-Z\d\s_,\$\?\:\|\&\=\[\]\\]*\)\s*(?:\:\s*[a-zA-Z\d_\?\|\\\[\]]+\s*)?\{",
+            "CLOJURE":    r"\(\s*(defn-?|defmacro|defmulti|defmethod)\s+[a-zA-Z\d_\-\?\!\*\+\<\>\=]+",
+            "DART":       r"\b(?!if|for|while|switch|catch)\b[a-zA-Z\d_\<\>]+\s+[a-zA-Z\d_]+\s*\([a-zA-Z\d\s_,\<\>\?\*\[\]\.]*\)\s*(?:async\s*)?(?:\{|=>)",
         }
 
         self.compiled_re: Dict[str, Pattern] = {}

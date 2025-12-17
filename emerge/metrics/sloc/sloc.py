@@ -46,6 +46,9 @@ class SLOCCommentType(Enum):
     CPP = {CommentKeyword.LINE_COMMENT.name: "//", CommentKeyword.START_BLOCK_COMMENT.name: "/*", CommentKeyword.STOP_BLOCK_COMMENT.name: "*/"}
     PY = {CommentKeyword.LINE_COMMENT.name: "#", CommentKeyword.START_BLOCK_COMMENT.name: '"""', CommentKeyword.STOP_BLOCK_COMMENT.name: '"""'}
     GO = {CommentKeyword.LINE_COMMENT.name: "//", CommentKeyword.START_BLOCK_COMMENT.name: "/*", CommentKeyword.STOP_BLOCK_COMMENT.name: "*/"}
+    PHP = {CommentKeyword.LINE_COMMENT.name: "//", CommentKeyword.START_BLOCK_COMMENT.name: "/*", CommentKeyword.STOP_BLOCK_COMMENT.name: "*/"}
+    CLOJURE = {CommentKeyword.LINE_COMMENT.name: ";", CommentKeyword.START_BLOCK_COMMENT.name: "(comment", CommentKeyword.STOP_BLOCK_COMMENT.name: ")"}
+    DART = {CommentKeyword.LINE_COMMENT.name: "//", CommentKeyword.START_BLOCK_COMMENT.name: "/*", CommentKeyword.STOP_BLOCK_COMMENT.name: "*/"}
 
 
 class SourceLinesOfCodeMetric(CodeMetric):
@@ -162,3 +165,9 @@ class SourceLinesOfCodeMetric(CodeMetric):
             return SLOCCommentType.PY.value
         if result.scanned_language == LanguageType.GO:
             return SLOCCommentType.GO.value
+        if result.scanned_language == LanguageType.PHP:
+            return SLOCCommentType.PHP.value
+        if result.scanned_language == LanguageType.CLOJURE:
+            return SLOCCommentType.CLOJURE.value
+        if result.scanned_language == LanguageType.DART:
+            return SLOCCommentType.DART.value
