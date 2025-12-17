@@ -1,0 +1,117 @@
+# emerge/languages/definitions/python.yaml
+# Python language definition for emerge code analysis tool
+# Note: Python import resolution is complex - this provides basic pattern matching
+
+name: python
+display_name: Python
+extensions: [.py, .pyw]
+
+comments:
+  line: "#"
+  block_start: '"""'
+  block_end: '"""'
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  # Import extraction
+  imports:
+    # import module
+    - regex: "^import\\s+([a-zA-Z_][a-zA-Z0-9_\\.]*)"
+      group: 1
+    # from module import ...
+    - regex: "^from\\s+([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s+import"
+      group: 1
+
+  # Entity extraction
+  entities:
+    - regex: "class\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*[:(]"
+      group: 1
+      type: class
+    - regex: "def\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\("
+      group: 1
+      type: function
+
+  # Inheritance
+  inheritance:
+    extends:
+      regex: "class\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\(\\s*([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+
+# TF-IDF stopwords for Python
+tfidf_stopwords:
+  - import
+  - from
+  - as
+  - class
+  - def
+  - return
+  - yield
+  - self
+  - cls
+  - super
+  - init
+  - new
+  - if
+  - else
+  - elif
+  - for
+  - while
+  - with
+  - try
+  - except
+  - finally
+  - raise
+  - assert
+  - pass
+  - break
+  - continue
+  - and
+  - or
+  - not
+  - in
+  - is
+  - None
+  - True
+  - False
+  - lambda
+  - global
+  - nonlocal
+  - del
+  - async
+  - await
+  - print
+  - len
+  - range
+  - list
+  - dict
+  - set
+  - tuple
+  - str
+  - int
+  - float
+  - bool
+  - type
+  - isinstance
+  - hasattr
+  - getattr
+  - setattr
+  - property
+  - staticmethod
+  - classmethod
+  - object
+  - Exception

@@ -1,0 +1,137 @@
+# emerge/languages/definitions/cpp.yaml
+# C++ language definition for emerge code analysis tool
+
+name: cpp
+display_name: C++
+extensions: [.cpp, .cc, .cxx, .hpp, .hh, .hxx, .h++]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  imports:
+    - regex: '#include\\s*<([^>]+)>'
+      group: 1
+    - regex: '#include\\s*"([^"]+)"'
+      group: 1
+
+  entities:
+    - regex: "class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "struct\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*[:{]"
+      group: 1
+      type: struct
+    - regex: "namespace\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: namespace
+    - regex: "template\\s*<[^>]*>\\s*class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: template_class
+
+  inheritance:
+    extends:
+      regex: ":\\s*(?:public|private|protected)?\\s*([A-Za-z_][A-Za-z0-9_:]*)"
+      group: 1
+
+  module:
+    regex: "namespace\\s+([A-Za-z_][A-Za-z0-9_:]*)"
+    group: 1
+
+tfidf_stopwords:
+  - include
+  - define
+  - ifdef
+  - ifndef
+  - endif
+  - pragma
+  - namespace
+  - using
+  - class
+  - struct
+  - union
+  - enum
+  - template
+  - typename
+  - typedef
+  - public
+  - private
+  - protected
+  - virtual
+  - override
+  - final
+  - static
+  - const
+  - constexpr
+  - mutable
+  - volatile
+  - inline
+  - extern
+  - explicit
+  - friend
+  - return
+  - this
+  - new
+  - delete
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - goto
+  - try
+  - catch
+  - throw
+  - noexcept
+  - nullptr
+  - true
+  - false
+  - auto
+  - decltype
+  - sizeof
+  - alignof
+  - typeid
+  - void
+  - int
+  - char
+  - bool
+  - float
+  - double
+  - long
+  - short
+  - unsigned
+  - signed
+  - string
+  - vector
+  - map
+  - set
+  - list
+  - unique_ptr
+  - shared_ptr
+  - cout
+  - cin
+  - endl
+  - std

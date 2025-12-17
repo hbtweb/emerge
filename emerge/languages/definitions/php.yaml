@@ -1,0 +1,134 @@
+# emerge/languages/definitions/php.yaml
+# PHP language definition for emerge code analysis tool
+
+name: php
+display_name: PHP
+extensions: [.php]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+  "'": " ' "
+  "\\": " \\ "
+
+patterns:
+  # Import extraction: use statements
+  imports:
+    # use App\Models\User;
+    - regex: "use\\s+([A-Za-z_][A-Za-z0-9_\\\\]+)\\s*;"
+      group: 1
+    # use App\Models\User as UserModel;
+    - regex: "use\\s+([A-Za-z_][A-Za-z0-9_\\\\]+)\\s+as\\s+"
+      group: 1
+
+  # Entity extraction
+  entities:
+    - regex: "(?:abstract\\s+)?(?:final\\s+)?class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "interface\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: interface
+    - regex: "trait\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: trait
+    - regex: "enum\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: enum
+
+  # Inheritance
+  inheritance:
+    extends:
+      regex: "\\bextends\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+    implements:
+      regex: "\\bimplements\\s+([^{]+)"
+      group: 1
+      split: ","
+
+  # Module/namespace extraction
+  module:
+    regex: "namespace\\s+([A-Za-z_][A-Za-z0-9_\\\\]+)\\s*;"
+    group: 1
+
+# TF-IDF stopwords for PHP
+tfidf_stopwords:
+  - namespace
+  - use
+  - class
+  - interface
+  - trait
+  - enum
+  - extends
+  - implements
+  - public
+  - private
+  - protected
+  - static
+  - final
+  - abstract
+  - const
+  - function
+  - return
+  - new
+  - this
+  - self
+  - parent
+  - if
+  - else
+  - elseif
+  - for
+  - foreach
+  - while
+  - do
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - instanceof
+  - null
+  - true
+  - false
+  - void
+  - int
+  - float
+  - string
+  - bool
+  - array
+  - object
+  - callable
+  - iterable
+  - mixed
+  - never
+  - echo
+  - print
+  - require
+  - require_once
+  - include
+  - include_once
+  - global
+  - isset
+  - unset
+  - empty

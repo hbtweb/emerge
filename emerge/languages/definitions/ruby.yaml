@@ -1,0 +1,115 @@
+# emerge/languages/definitions/ruby.yaml
+# Ruby language definition for emerge code analysis tool
+
+name: ruby
+display_name: Ruby
+extensions: [.rb, .rake, .gemspec]
+
+comments:
+  line: "#"
+  block_start: "=begin"
+  block_end: "=end"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+  "'": " ' "
+
+patterns:
+  # Import extraction
+  imports:
+    # require 'file'
+    - regex: "require\\s+['\"]([^'\"]+)['\"]"
+      group: 1
+    # require_relative 'file'
+    - regex: "require_relative\\s+['\"]([^'\"]+)['\"]"
+      group: 1
+
+  # Entity extraction
+  entities:
+    - regex: "class\\s+([A-Za-z_][A-Za-z0-9_:]*)"
+      group: 1
+      type: class
+    - regex: "module\\s+([A-Za-z_][A-Za-z0-9_:]*)"
+      group: 1
+      type: module
+
+  # Inheritance
+  inheritance:
+    extends:
+      regex: "class\\s+[A-Za-z_][A-Za-z0-9_:]*\\s*<\\s*([A-Za-z_][A-Za-z0-9_:]*)"
+      group: 1
+
+# TF-IDF stopwords for Ruby
+tfidf_stopwords:
+  - require
+  - require_relative
+  - class
+  - module
+  - def
+  - end
+  - do
+  - return
+  - yield
+  - self
+  - super
+  - new
+  - initialize
+  - attr_reader
+  - attr_writer
+  - attr_accessor
+  - private
+  - protected
+  - public
+  - if
+  - else
+  - elsif
+  - unless
+  - case
+  - when
+  - for
+  - while
+  - until
+  - loop
+  - each
+  - map
+  - select
+  - reject
+  - reduce
+  - inject
+  - begin
+  - rescue
+  - ensure
+  - raise
+  - throw
+  - catch
+  - nil
+  - true
+  - false
+  - and
+  - or
+  - not
+  - include
+  - extend
+  - prepend
+  - alias
+  - undef
+  - defined
+  - lambda
+  - proc
+  - block
+  - puts
+  - print
+  - gets

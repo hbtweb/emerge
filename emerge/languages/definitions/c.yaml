@@ -1,0 +1,103 @@
+# emerge/languages/definitions/c.yaml
+# C language definition for emerge code analysis tool
+
+name: c
+display_name: C
+extensions: [.c, .h]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  imports:
+    # #include <header.h>
+    - regex: '#include\\s*<([^>]+)>'
+      group: 1
+    # #include "header.h"
+    - regex: '#include\\s*"([^"]+)"'
+      group: 1
+
+  entities:
+    - regex: "typedef\\s+struct\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: struct
+    - regex: "struct\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\{"
+      group: 1
+      type: struct
+    - regex: "typedef\\s+enum\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: enum
+    - regex: "enum\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\{"
+      group: 1
+      type: enum
+
+tfidf_stopwords:
+  - include
+  - define
+  - ifdef
+  - ifndef
+  - endif
+  - else
+  - elif
+  - pragma
+  - typedef
+  - struct
+  - union
+  - enum
+  - extern
+  - static
+  - const
+  - volatile
+  - register
+  - auto
+  - inline
+  - return
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - goto
+  - sizeof
+  - typeof
+  - NULL
+  - void
+  - int
+  - char
+  - short
+  - long
+  - float
+  - double
+  - signed
+  - unsigned
+  - size_t
+  - printf
+  - scanf
+  - malloc
+  - free
+  - memcpy
+  - strlen
+  - strcmp

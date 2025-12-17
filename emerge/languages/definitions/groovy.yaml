@@ -1,0 +1,114 @@
+# emerge/languages/definitions/groovy.yaml
+# Groovy language definition for emerge code analysis tool
+
+name: groovy
+display_name: Groovy
+extensions: [.groovy, .gradle]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  imports:
+    - regex: "import\\s+([a-zA-Z][a-zA-Z0-9._*]+)"
+      group: 1
+
+  entities:
+    - regex: "class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "interface\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: interface
+    - regex: "trait\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: trait
+    - regex: "enum\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: enum
+
+  inheritance:
+    extends:
+      regex: "\\bextends\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+    implements:
+      regex: "\\bimplements\\s+([^{]+)"
+      group: 1
+      split: ","
+
+  module:
+    regex: "package\\s+([a-zA-Z][a-zA-Z0-9._]+)"
+    group: 1
+
+tfidf_stopwords:
+  - package
+  - import
+  - class
+  - interface
+  - trait
+  - enum
+  - extends
+  - implements
+  - def
+  - return
+  - this
+  - super
+  - new
+  - as
+  - in
+  - if
+  - else
+  - for
+  - while
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - throws
+  - assert
+  - null
+  - true
+  - false
+  - public
+  - private
+  - protected
+  - static
+  - final
+  - abstract
+  - void
+  - int
+  - long
+  - double
+  - float
+  - boolean
+  - String
+  - Object
+  - List
+  - Map
+  - Set
+  - Closure
+  - println
+  - print

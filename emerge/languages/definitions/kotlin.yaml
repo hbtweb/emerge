@@ -1,0 +1,123 @@
+# emerge/languages/definitions/kotlin.yaml
+# Kotlin language definition for emerge code analysis tool
+
+name: kotlin
+display_name: Kotlin
+extensions: [.kt, .kts]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  imports:
+    - regex: "import\\s+([a-zA-Z][a-zA-Z0-9._*]+)"
+      group: 1
+
+  entities:
+    - regex: "(?:data\\s+)?class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "interface\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: interface
+    - regex: "object\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: object
+    - regex: "enum\\s+class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: enum
+    - regex: "sealed\\s+class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: sealed_class
+
+  inheritance:
+    extends:
+      regex: ":\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*[({]"
+      group: 1
+
+  module:
+    regex: "package\\s+([a-zA-Z][a-zA-Z0-9._]+)"
+    group: 1
+
+tfidf_stopwords:
+  - package
+  - import
+  - class
+  - interface
+  - object
+  - enum
+  - sealed
+  - data
+  - fun
+  - val
+  - var
+  - return
+  - this
+  - super
+  - init
+  - constructor
+  - if
+  - else
+  - when
+  - for
+  - while
+  - do
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - null
+  - true
+  - false
+  - public
+  - private
+  - protected
+  - internal
+  - open
+  - final
+  - abstract
+  - override
+  - companion
+  - inline
+  - infix
+  - operator
+  - suspend
+  - lateinit
+  - lazy
+  - by
+  - is
+  - as
+  - in
+  - out
+  - Any
+  - Unit
+  - Nothing
+  - String
+  - Int
+  - Long
+  - Boolean
+  - Double
+  - Float
+  - List
+  - Map
+  - Set

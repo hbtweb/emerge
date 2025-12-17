@@ -154,6 +154,9 @@ class Configuration:
         self.version = version
         self.arg_parser: Any = None
         self.supported_languages: List[str] = []
+        # Auto-scan mode attributes
+        self.scan_path: Optional[str] = None
+        self.output_dir: str = "./emerge-output"
 
     def _get_own__dict__(self):
         return self.__dict__
@@ -170,6 +173,19 @@ class Configuration:
             '--add-config',
             dest='language',
             help='add a new config from a template, where LANGUAGE is one of [' + ", ".join(self.supported_languages) + ']'
+        )
+        # Auto-scan mode: no config file needed
+        self.arg_parser.add_argument(
+            '-s',
+            '--scan',
+            dest='scan_path',
+            help='auto-scan directory (no config file needed, auto-detects languages)'
+        )
+        self.arg_parser.add_argument(
+            '-o',
+            '--output',
+            dest='output_dir',
+            help='output directory for results (default: ./emerge-output)'
         )
 
     def _options_for_value(self, value: str) -> Optional[List]:
@@ -217,11 +233,7 @@ class Configuration:
                 print('❌ could not find the config template: ' + str(config_file))
             return
 
-        if not args.yamlconfig:
-            self.arg_parser.print_help()
-            LOGGER.error('no yaml config given')
-            return
-
+        # Handle verbose/debug/error flags first
         if args.verbose:
             LOGGER.set_logging_level_to_info()
             LOGGER.override_level_from_command_line_arg = True
@@ -232,6 +244,19 @@ class Configuration:
             LOGGER.set_logging_level_to_error()
             LOGGER.override_level_from_command_line_arg = True
 
+        # Auto-scan mode: --scan takes precedence over --config
+        if args.scan_path:
+            self.scan_path = args.scan_path
+            if args.output_dir:
+                self.output_dir = args.output_dir
+            return
+
+        # Config file mode
+        if not args.yamlconfig:
+            self.arg_parser.print_help()
+            LOGGER.error('no yaml config given')
+            return
+
         self.yaml_config_path = args.yamlconfig
 
     def print_config_dict(self) -> None:
@@ -241,6 +266,10 @@ class Configuration:
         if self.yaml_config_path:
             return True
         return False
+
+    def has_scan_path(self) -> bool:
+        """Check if auto-scan mode is enabled."""
+        return self.scan_path is not None
 
     def load_config_from_yaml_file(self, yaml_file_name: str) -> None:
         self._yaml_loader.load_config_from_yaml_file(yaml_file_name)

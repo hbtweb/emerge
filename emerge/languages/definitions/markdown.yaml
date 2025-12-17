@@ -1,0 +1,232 @@
+# emerge/languages/definitions/markdown.yaml
+# Markdown language definition for emerge code analysis tool
+# Enables documentation structure analysis and code-doc correlation
+
+name: markdown
+display_name: Markdown
+extensions: [.md, .markdown, .mdx, .mdown, .mkd]
+
+comments:
+  # HTML comments in markdown
+  block_start: "<!--"
+  block_end: "-->"
+
+token_mappings:
+  "[": " [ "
+  "]": " ] "
+  "(": " ( "
+  ")": " ) "
+  "#": " # "
+  "*": " * "
+  "_": " _ "
+  "`": " ` "
+  "|": " | "
+  ">": " > "
+
+patterns:
+  # Imports = links to other files, internal references
+  imports:
+    # [link text](path/to/file.md)
+    - regex: "\\[([^\\]]+)\\]\\(([^)]+\\.md(?:x)?)\\)"
+      group: 2
+    # [link text](./relative/path.md)
+    - regex: "\\[([^\\]]+)\\]\\(\\./([^)]+)\\)"
+      group: 2
+    # [link text](#anchor) - internal anchor links
+    - regex: "\\[([^\\]]+)\\]\\(#([^)]+)\\)"
+      group: 2
+      transform: "prefix('#')"
+    # Reference-style links: [text][ref]
+    - regex: "\\[([^\\]]+)\\]\\[([^\\]]+)\\]"
+      group: 2
+    # Code references: `ClassName` or `function_name` (PascalCase or snake_case)
+    - regex: "`([A-Z][a-zA-Z0-9_]+)`"
+      group: 1
+      type: code_reference
+    # File path references in prose: `path/to/file.ext`
+    - regex: "`([a-zA-Z0-9_/.-]+\\.[a-zA-Z]+)`"
+      group: 1
+      type: file_reference
+
+  # Entities = document structure (headings, sections)
+  entities:
+    # # Heading 1
+    - regex: "^#\\s+(.+)$"
+      group: 1
+      type: h1
+    # ## Heading 2
+    - regex: "^##\\s+(.+)$"
+      group: 1
+      type: h2
+    # ### Heading 3
+    - regex: "^###\\s+(.+)$"
+      group: 1
+      type: h3
+    # #### Heading 4
+    - regex: "^####\\s+(.+)$"
+      group: 1
+      type: h4
+    # ##### Heading 5
+    - regex: "^#####\\s+(.+)$"
+      group: 1
+      type: h5
+    # ###### Heading 6
+    - regex: "^######\\s+(.+)$"
+      group: 1
+      type: h6
+    # Setext-style H1: underlined with ===
+    - regex: "^(.+)\\n=+$"
+      group: 1
+      type: h1_setext
+    # Setext-style H2: underlined with ---
+    - regex: "^(.+)\\n-+$"
+      group: 1
+      type: h2_setext
+
+  # Module = document title (first H1)
+  module:
+    regex: "^#\\s+(.+)$"
+    group: 1
+
+  # Methods = code blocks (fenced) - for analyzing embedded code
+  methods:
+    # ```language ... ``` - fenced code blocks
+    - regex: "^```([a-zA-Z0-9_+-]*)\\s*$"
+      group: 1
+      type: code_block
+    # Indented code blocks (4 spaces)
+    - regex: "^    (.+)$"
+      group: 1
+      type: indented_code
+
+tfidf_stopwords:
+  # Common markdown syntax
+  - the
+  - a
+  - an
+  - and
+  - or
+  - but
+  - in
+  - on
+  - at
+  - to
+  - for
+  - of
+  - with
+  - by
+  - from
+  - as
+  - is
+  - was
+  - are
+  - were
+  - been
+  - be
+  - have
+  - has
+  - had
+  - do
+  - does
+  - did
+  - will
+  - would
+  - could
+  - should
+  - may
+  - might
+  - must
+  - shall
+  - can
+  - need
+  - this
+  - that
+  - these
+  - those
+  - it
+  - its
+  - they
+  - them
+  - their
+  - we
+  - us
+  - our
+  - you
+  - your
+  - he
+  - she
+  - him
+  - her
+  - his
+  # Documentation-specific stopwords
+  - see
+  - also
+  - note
+  - example
+  - following
+  - below
+  - above
+  - section
+  - chapter
+  - figure
+  - table
+  - code
+  - file
+  - directory
+  - folder
+  - path
+  - run
+  - install
+  - setup
+  - configure
+  - build
+  - test
+  - command
+  - option
+  - parameter
+  - argument
+  - value
+  - default
+  - required
+  - optional
+  - returns
+  - return
+  - param
+  - type
+  - string
+  - number
+  - boolean
+  - array
+  - object
+  - function
+  - method
+  - class
+  - interface
+  - module
+  - package
+  - import
+  - export
+  - usage
+  - description
+  - overview
+  - introduction
+  - getting
+  - started
+  - quick
+  - start
+  - guide
+  - tutorial
+  - reference
+  - api
+  - documentation
+  - readme
+  - changelog
+  - license
+  - contributing
+  - todo
+  - fixme
+  - note
+  - warning
+  - important
+  - tip
+  - info

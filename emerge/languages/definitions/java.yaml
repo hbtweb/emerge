@@ -1,0 +1,129 @@
+# emerge/languages/definitions/java.yaml
+# Java language definition for emerge code analysis tool
+
+name: java
+display_name: Java
+extensions: [.java]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  # Import extraction: import package.Class;
+  imports:
+    - regex: "import\\s+([a-zA-Z][a-zA-Z0-9._*]+)\\s*;"
+      group: 1
+
+  # Entity extraction: class ClassName
+  entities:
+    - regex: "(?:public\\s+|private\\s+|protected\\s+)?(?:abstract\\s+)?(?:final\\s+)?class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "(?:public\\s+|private\\s+|protected\\s+)?interface\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: interface
+    - regex: "(?:public\\s+|private\\s+|protected\\s+)?enum\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: enum
+    - regex: "@interface\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: annotation
+
+  # Inheritance extraction
+  inheritance:
+    extends:
+      regex: "\\bextends\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+    implements:
+      regex: "\\bimplements\\s+([^{]+)"
+      group: 1
+      split: ","
+
+  # Module/package extraction: package com.example;
+  module:
+    regex: "package\\s+([a-zA-Z][a-zA-Z0-9._]+)\\s*;"
+    group: 1
+
+# TF-IDF stopwords for Java
+tfidf_stopwords:
+  - public
+  - private
+  - protected
+  - static
+  - final
+  - abstract
+  - class
+  - interface
+  - enum
+  - extends
+  - implements
+  - import
+  - package
+  - new
+  - this
+  - super
+  - void
+  - return
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - throws
+  - synchronized
+  - volatile
+  - transient
+  - native
+  - strictfp
+  - assert
+  - instanceof
+  - null
+  - true
+  - false
+  - int
+  - long
+  - short
+  - byte
+  - float
+  - double
+  - boolean
+  - char
+  - String
+  - Object
+  - Integer
+  - Long
+  - Double
+  - Boolean
+  - List
+  - Map
+  - Set
+  - ArrayList
+  - HashMap
+  - HashSet

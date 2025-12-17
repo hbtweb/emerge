@@ -1,0 +1,118 @@
+# emerge/languages/definitions/objc.yaml
+# Objective-C language definition for emerge code analysis tool
+
+name: objc
+display_name: Objective-C
+extensions: [.m, .mm]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+  "@": " @ "
+
+patterns:
+  imports:
+    - regex: '#import\\s*<([^>]+)>'
+      group: 1
+    - regex: '#import\\s*"([^"]+)"'
+      group: 1
+    - regex: '#include\\s*<([^>]+)>'
+      group: 1
+    - regex: '#include\\s*"([^"]+)"'
+      group: 1
+
+  entities:
+    - regex: "@interface\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: interface
+    - regex: "@implementation\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: implementation
+    - regex: "@protocol\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: protocol
+
+  inheritance:
+    extends:
+      regex: "@interface\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+
+tfidf_stopwords:
+  - import
+  - include
+  - interface
+  - implementation
+  - protocol
+  - property
+  - synthesize
+  - dynamic
+  - selector
+  - self
+  - super
+  - nil
+  - Nil
+  - NULL
+  - YES
+  - NO
+  - true
+  - false
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - default
+  - break
+  - continue
+  - return
+  - goto
+  - try
+  - catch
+  - finally
+  - throw
+  - autoreleasepool
+  - synchronized
+  - strong
+  - weak
+  - retain
+  - copy
+  - assign
+  - nonatomic
+  - atomic
+  - readonly
+  - readwrite
+  - id
+  - Class
+  - SEL
+  - IMP
+  - BOOL
+  - void
+  - int
+  - float
+  - double
+  - char
+  - NSObject
+  - NSString
+  - NSArray
+  - NSDictionary
+  - NSNumber
+  - NSLog

@@ -1,0 +1,133 @@
+# emerge/languages/definitions/dart.yaml
+# Dart language definition for emerge code analysis tool
+
+name: dart
+display_name: Dart
+extensions: [.dart]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+# Token preprocessing (for tokenizer)
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+  "'": " ' "
+  "@": " @ "
+
+patterns:
+  # Import extraction
+  imports:
+    - regex: "import\\s+['\"]package:([^'\"]+)['\"]"
+      group: 1
+      transform: "replace('/', '.').removesuffix('.dart')"
+    - regex: "import\\s+['\"]dart:([^'\"]+)['\"]"
+      group: 1
+      transform: "prefix('dart:')"
+    - regex: "import\\s+['\"]([^'\":]+\\.dart)['\"]"
+      group: 1
+      transform: "replace('/', '.').removesuffix('.dart')"
+    - regex: "export\\s+['\"]package:([^'\"]+)['\"]"
+      group: 1
+      transform: "replace('/', '.').removesuffix('.dart')"
+    - regex: "part\\s+['\"]([^'\"]+)['\"]"
+      group: 1
+      transform: "replace('/', '.').removesuffix('.dart')"
+
+  # Entity (class/interface/etc) extraction
+  entities:
+    - regex: "\\babstract\\s+class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: abstract_class
+    - regex: "(?<!abstract\\s)\\bclass\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "\\bmixin\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: mixin
+    - regex: "\\bextension\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+on"
+      group: 1
+      type: extension
+
+  # Inheritance relationship extraction
+  inheritance:
+    extends:
+      regex: "\\bextends\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+    implements:
+      regex: "\\bimplements\\s+([^{]+?)(?:\\bwith\\b|$)"
+      group: 1
+      split: ","
+    with:
+      regex: "\\bwith\\s+([^{]+)"
+      group: 1
+      split: ","
+
+  # Module/package name extraction
+  module:
+    regex: "\\blibrary\\s+([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s*;"
+    group: 1
+
+# TF-IDF stopwords for this language
+tfidf_stopwords:
+  - return
+  - void
+  - class
+  - extends
+  - implements
+  - with
+  - abstract
+  - static
+  - final
+  - const
+  - var
+  - dynamic
+  - late
+  - required
+  - factory
+  - async
+  - await
+  - yield
+  - sync
+  - import
+  - export
+  - part
+  - library
+  - show
+  - hide
+  - as
+  - if
+  - else
+  - for
+  - while
+  - do
+  - switch
+  - case
+  - break
+  - continue
+  - try
+  - catch
+  - finally
+  - throw
+  - rethrow
+  - assert
+  - new
+  - this
+  - super
+  - null
+  - true
+  - false

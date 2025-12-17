@@ -1,0 +1,120 @@
+# emerge/languages/definitions/go.yaml
+# Go language definition for emerge code analysis tool
+
+name: go
+display_name: Go
+extensions: [.go]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+  "&": " & "
+
+patterns:
+  # Import extraction
+  imports:
+    # Single import: import "fmt"
+    - regex: 'import\s+"([^"]+)"'
+      group: 1
+    # Import block items: "package/path"
+    - regex: '^\s*"([^"]+)"'
+      group: 1
+
+  # Entity extraction (struct, interface)
+  entities:
+    - regex: "type\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+struct"
+      group: 1
+      type: struct
+    - regex: "type\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+interface"
+      group: 1
+      type: interface
+    - regex: "func\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\("
+      group: 1
+      type: function
+
+  # Module/package extraction
+  module:
+    regex: "package\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
+    group: 1
+
+# TF-IDF stopwords for Go
+tfidf_stopwords:
+  - package
+  - import
+  - func
+  - return
+  - type
+  - struct
+  - interface
+  - map
+  - chan
+  - var
+  - const
+  - if
+  - else
+  - for
+  - range
+  - switch
+  - case
+  - default
+  - select
+  - defer
+  - go
+  - break
+  - continue
+  - goto
+  - fallthrough
+  - nil
+  - true
+  - false
+  - int
+  - int8
+  - int16
+  - int32
+  - int64
+  - uint
+  - uint8
+  - uint16
+  - uint32
+  - uint64
+  - float32
+  - float64
+  - complex64
+  - complex128
+  - byte
+  - rune
+  - string
+  - bool
+  - error
+  - make
+  - new
+  - append
+  - copy
+  - delete
+  - len
+  - cap
+  - close
+  - panic
+  - recover
+  - print
+  - println
+  - fmt
+  - err
+  - ctx

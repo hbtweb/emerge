@@ -1,0 +1,152 @@
+# emerge/languages/definitions/commonlisp.yaml
+# Common Lisp language definition for emerge code analysis tool
+
+name: commonlisp
+display_name: Common Lisp
+extensions: [.lisp, .lsp, .cl, .fasl, .asd]
+
+comments:
+  line: ";"
+  block_start: "#|"
+  block_end: "|#"
+
+token_mappings:
+  "(": " ( "
+  ")": " ) "
+  "'": " ' "
+  "`": " ` "
+  ",": " , "
+  "@": " @ "
+  '"': ' " '
+
+patterns:
+  imports:
+    # (require 'package)
+    - regex: "\\(\\s*require\\s+['\"]?([a-zA-Z][a-zA-Z0-9_-]*)\\)?['\"]?"
+      group: 1
+    # (use-package :package)
+    - regex: "\\(\\s*use-package\\s+:([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+    # (asdf:load-system :system-name)
+    - regex: "\\(\\s*(?:asdf:)?load-system\\s+[:'\"]+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+    # (ql:quickload :package)
+    - regex: "\\(\\s*(?:ql:)?quickload\\s+[:'\"]+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+
+  entities:
+    # (defclass class-name ...)
+    - regex: "\\(\\s*defclass\\s+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+      type: class
+    # (defstruct struct-name ...)
+    - regex: "\\(\\s*defstruct\\s+(?:\\([^)]*\\)|([a-zA-Z][a-zA-Z0-9_-]*))"
+      group: 1
+      type: struct
+    # (defpackage :package-name ...)
+    - regex: "\\(\\s*defpackage\\s+[:'\"]*([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+      type: package
+    # (define-condition condition-name ...)
+    - regex: "\\(\\s*define-condition\\s+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+      type: condition
+
+  inheritance:
+    extends:
+      # (defclass name (parent1 parent2) ...)
+      regex: "\\(\\s*defclass\\s+[a-zA-Z][a-zA-Z0-9_-]*\\s+\\(([^)]+)\\)"
+      group: 1
+      split: " "
+
+  module:
+    # (in-package :package-name)
+    regex: "\\(\\s*in-package\\s+[:'\"]*([a-zA-Z][a-zA-Z0-9_-]*)"
+    group: 1
+
+  methods:
+    # (defun function-name ...)
+    - regex: "\\(\\s*defun\\s+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+    # (defmethod method-name ...)
+    - regex: "\\(\\s*defmethod\\s+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+    # (defgeneric generic-name ...)
+    - regex: "\\(\\s*defgeneric\\s+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+    # (defmacro macro-name ...)
+    - regex: "\\(\\s*defmacro\\s+([a-zA-Z][a-zA-Z0-9_-]*)"
+      group: 1
+
+tfidf_stopwords:
+  - defun
+  - defmacro
+  - defmethod
+  - defgeneric
+  - defclass
+  - defstruct
+  - defpackage
+  - defparameter
+  - defvar
+  - defconstant
+  - define-condition
+  - in-package
+  - use-package
+  - export
+  - import
+  - require
+  - provide
+  - let
+  - let*
+  - flet
+  - labels
+  - lambda
+  - progn
+  - prog1
+  - prog2
+  - block
+  - return
+  - return-from
+  - if
+  - when
+  - unless
+  - cond
+  - case
+  - typecase
+  - loop
+  - do
+  - dolist
+  - dotimes
+  - mapcar
+  - mapc
+  - mapcan
+  - setf
+  - setq
+  - push
+  - pop
+  - cons
+  - car
+  - cdr
+  - first
+  - rest
+  - list
+  - append
+  - concatenate
+  - format
+  - print
+  - princ
+  - terpri
+  - nil
+  - t
+  - quote
+  - function
+  - funcall
+  - apply
+  - values
+  - multiple-value-bind
+  - handler-case
+  - handler-bind
+  - restart-case
+  - with-open-file
+  - with-slots
+  - with-accessors

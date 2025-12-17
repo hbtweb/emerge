@@ -1,0 +1,114 @@
+# emerge/languages/definitions/swift.yaml
+# Swift language definition for emerge code analysis tool
+
+name: swift
+display_name: Swift
+extensions: [.swift]
+
+comments:
+  line: "//"
+  block_start: "/*"
+  block_end: "*/"
+
+token_mappings:
+  ":": " : "
+  ";": " ; "
+  "{": " { "
+  "}": " } "
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "?": " ? "
+  "!": " ! "
+  ",": " , "
+  "<": " < "
+  ">": " > "
+  '"': ' " '
+
+patterns:
+  imports:
+    - regex: "import\\s+([A-Za-z_][A-Za-z0-9_\\.]*)"
+      group: 1
+
+  entities:
+    - regex: "class\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: class
+    - regex: "struct\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: struct
+    - regex: "enum\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: enum
+    - regex: "protocol\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: protocol
+    - regex: "extension\\s+([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+      type: extension
+
+  inheritance:
+    extends:
+      regex: ":\\s*([A-Za-z_][A-Za-z0-9_]*)"
+      group: 1
+
+tfidf_stopwords:
+  - import
+  - class
+  - struct
+  - enum
+  - protocol
+  - extension
+  - func
+  - var
+  - let
+  - return
+  - self
+  - super
+  - init
+  - deinit
+  - if
+  - else
+  - guard
+  - switch
+  - case
+  - default
+  - for
+  - while
+  - repeat
+  - break
+  - continue
+  - fallthrough
+  - try
+  - catch
+  - throw
+  - throws
+  - rethrows
+  - do
+  - nil
+  - true
+  - false
+  - public
+  - private
+  - internal
+  - fileprivate
+  - open
+  - static
+  - final
+  - override
+  - mutating
+  - lazy
+  - weak
+  - unowned
+  - optional
+  - Any
+  - AnyObject
+  - String
+  - Int
+  - Bool
+  - Double
+  - Float
+  - Array
+  - Dictionary
+  - Set

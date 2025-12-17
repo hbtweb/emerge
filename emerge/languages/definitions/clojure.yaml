@@ -1,0 +1,122 @@
+# emerge/languages/definitions/clojure.yaml
+# Clojure language definition for emerge code analysis tool
+
+name: clojure
+display_name: Clojure
+extensions: [.clj, .cljs, .cljc, .edn]
+
+comments:
+  line: ";"
+  # Clojure doesn't have traditional block comments
+  # #_ ignores the next form but is not a block comment
+
+token_mappings:
+  "(": " ( "
+  ")": " ) "
+  "[": " [ "
+  "]": " ] "
+  "{": " { "
+  "}": " } "
+  '"': ' " '
+  "'": " ' "
+  ":": " : "
+
+patterns:
+  # Import extraction - :require blocks
+  imports:
+    # Match namespaces in :require vectors: [namespace.name ...]
+    - regex: "\\[\\s*([a-zA-Z][a-zA-Z0-9._-]+)(?:\\s|\\])"
+      group: 1
+      transform: "replace('.', '/').replace('-', '_')"
+    # Match :import for Java classes: [java.package.Class]
+    - regex: ":import\\s+\\[([a-zA-Z][a-zA-Z0-9._]+)"
+      group: 1
+      transform: "replace('.', '/')"
+
+  # Entity (defrecord, defprotocol, etc) extraction
+  entities:
+    - regex: "\\(\\s*defrecord\\s+([A-Za-z][A-Za-z0-9_-]*)"
+      group: 1
+      type: defrecord
+    - regex: "\\(\\s*defprotocol\\s+([A-Za-z][A-Za-z0-9_-]*)"
+      group: 1
+      type: defprotocol
+    - regex: "\\(\\s*deftype\\s+([A-Za-z][A-Za-z0-9_-]*)"
+      group: 1
+      type: deftype
+    - regex: "\\(\\s*definterface\\s+([A-Za-z][A-Za-z0-9_-]*)"
+      group: 1
+      type: definterface
+
+  # Module/namespace extraction: (ns namespace.name ...)
+  module:
+    regex: "\\(\\s*ns\\s+([a-zA-Z][a-zA-Z0-9._-]*)"
+    group: 1
+
+# TF-IDF stopwords for Clojure
+tfidf_stopwords:
+  - ns
+  - require
+  - import
+  - use
+  - def
+  - defn
+  - defn-
+  - defmacro
+  - defmulti
+  - defmethod
+  - defprotocol
+  - defrecord
+  - deftype
+  - definterface
+  - fn
+  - let
+  - letfn
+  - if
+  - if-let
+  - if-not
+  - when
+  - when-let
+  - when-not
+  - cond
+  - case
+  - do
+  - loop
+  - recur
+  - try
+  - catch
+  - finally
+  - throw
+  - for
+  - doseq
+  - dotimes
+  - while
+  - and
+  - or
+  - not
+  - nil
+  - true
+  - false
+  - this
+  - self
+  - apply
+  - map
+  - filter
+  - reduce
+  - first
+  - rest
+  - cons
+  - conj
+  - assoc
+  - dissoc
+  - get
+  - get-in
+  - update
+  - update-in
+  - merge
+  - into
+  - str
+  - println
+  - prn
+  - pr
+  - print
