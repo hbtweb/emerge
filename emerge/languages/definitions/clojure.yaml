@@ -5,6 +5,22 @@ name: clojure
 display_name: Clojure
 extensions: [.clj, .cljs, .cljc, .edn]
 
+# Package manifest configuration
+manifest:
+  file: deps.edn
+  fallback: [project.clj]             # Leiningen fallback
+  format: edn
+
+  # Source paths
+  source_paths:
+    path: ":paths"                    # Default source directories
+    default: ["src"]
+
+  # Dependency information
+  dependencies:
+    runtime: ":deps"
+    aliases: ":aliases"               # Dev deps in aliases like :dev
+
 comments:
   line: ";"
   # Clojure doesn't have traditional block comments

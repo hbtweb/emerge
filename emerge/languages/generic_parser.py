@@ -6,7 +6,7 @@ One parser class, configured by YAML language definitions.
 # Authors: Grzegorz Lato <grzegorz.lato@gmail.com>
 # License: MIT
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 import re
 import logging
@@ -14,7 +14,10 @@ import logging
 import coloredlogs
 
 from emerge.languages.abstractparser import AbstractParser, ParsingMixin
-from emerge.languages.registry import LanguageDefinition, get_registry
+from emerge.languages.registry import (
+    LanguageDefinition, get_registry, get_manifest_loader,
+    ManifestLoader, LoadedManifest
+)
 from emerge.results import FileResult, EntityResult
 from emerge.abstractresult import AbstractResult, AbstractFileResult, AbstractEntityResult
 from emerge.log import Logger
@@ -33,6 +36,75 @@ class GenericParser(AbstractParser, ParsingMixin):
         self._def = language_def
         self._results: Dict[str, AbstractResult] = {}
         self._language_name = language_def.name.upper()
+
+        # Manifest support for namespace resolution
+        self._manifest_loader: Optional[ManifestLoader] = None
+        self._loaded_manifest: Optional[LoadedManifest] = None
+        self._project_root: Optional[Path] = None
+
+    def initialize_manifest(self, project_root: Path) -> bool:
+        """
+        Initialize manifest loader for namespace resolution.
+        Call this before parsing files if you want manifest-aware dependency resolution.
+
+        Returns True if manifest was loaded successfully.
+        """
+        self._project_root = project_root
+        self._manifest_loader = get_manifest_loader(project_root)
+        self._loaded_manifest = self._manifest_loader.load_for_language(self._def)
+
+        if self._loaded_manifest:
+            LOGGER.info(f'Loaded manifest for {self._language_name}: {self._loaded_manifest.path}')
+            LOGGER.info(f'Autoload mappings: {len(self._loaded_manifest.autoload_mappings)}')
+            return True
+        return False
+
+    def resolve_import_to_file(self, import_name: str, include_project_prefix: bool = True) -> Optional[str]:
+        """
+        Resolve an import/namespace to a relative file path using manifest autoload mappings.
+        Returns the resolved file path relative to project root, or None if not resolvable.
+
+        Args:
+            import_name: The namespace/import to resolve
+            include_project_prefix: If True, prefix with project folder name for graph matching
+        """
+        if not self._manifest_loader or not self._loaded_manifest:
+            return None
+
+        resolved = self._manifest_loader.resolve_namespace_to_file(
+            import_name, self._loaded_manifest, self._def
+        )
+
+        if resolved and self._project_root:
+            try:
+                relative_path = str(resolved.relative_to(self._project_root))
+                if include_project_prefix:
+                    # Add project folder name prefix to match unique_name format
+                    project_name = self._project_root.name
+                    return f"{project_name}/{relative_path}"
+                return relative_path
+            except ValueError:
+                return str(resolved)
+
+        return None
+
+    def is_internal_dependency(self, import_name: str) -> bool:
+        """Check if an import resolves to a file within the project."""
+        return self.resolve_import_to_file(import_name) is not None
+
+    def is_external_dependency(self, import_name: str) -> bool:
+        """Check if an import is an external (vendor) dependency."""
+        if not self._loaded_manifest:
+            return False
+
+        # Check if it's in the dependencies list
+        for dep_type, deps in self._loaded_manifest.dependencies.items():
+            for dep in deps:
+                # Check if import starts with dependency name
+                # (handles different namespace conventions)
+                if import_name.startswith(dep) or dep in import_name:
+                    return True
+        return False
 
     @classmethod
     def for_language(cls, language_name: str) -> 'GenericParser':
@@ -126,8 +198,20 @@ class GenericParser(AbstractParser, ParsingMixin):
 
         return result
 
-    def _extract_imports(self, source: str, analysis: Any) -> List[str]:
-        """Extract imports using language patterns."""
+    def _extract_imports(self, source: str, analysis: Any,
+                         resolve_to_files: bool = True) -> List[str]:
+        """
+        Extract imports using language patterns.
+
+        Args:
+            source: Source code content
+            analysis: Analysis context
+            resolve_to_files: If True and manifest is loaded, resolve namespaces
+                            to file paths for internal dependencies
+
+        Returns:
+            List of import dependencies (file paths for internal, namespaces for external)
+        """
         imports: List[str] = []
         clean_source = self._remove_comments(source)
 
@@ -152,9 +236,21 @@ class GenericParser(AbstractParser, ParsingMixin):
                 # Apply transform
                 dep = self._apply_transform(dep, transform)
 
-                if not self._is_dependency_in_ignore_list(dep, analysis):
-                    imports.append(dep)
-                    LOGGER.debug(f'adding import: {dep}')
+                if self._is_dependency_in_ignore_list(dep, analysis):
+                    continue
+
+                # Try to resolve to file path using manifest
+                if resolve_to_files and self._loaded_manifest:
+                    resolved_path = self.resolve_import_to_file(dep)
+                    if resolved_path:
+                        # Use resolved file path for internal dependencies
+                        imports.append(resolved_path)
+                        LOGGER.debug(f'resolved import: {dep} -> {resolved_path}')
+                        continue
+
+                # Fall back to namespace/import string
+                imports.append(dep)
+                LOGGER.debug(f'adding import: {dep}')
 
         return imports
 

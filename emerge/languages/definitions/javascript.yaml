@@ -5,6 +5,24 @@ name: javascript
 display_name: JavaScript
 extensions: [.js, .jsx, .mjs, .cjs]
 
+# Package manifest configuration
+manifest:
+  file: package.json
+  format: json
+
+  # Module resolution
+  module_resolution:
+    type: node                        # Node.js resolution algorithm
+    main_field: "main"                # Entry point field
+    exports_field: "exports"          # Modern exports map
+
+  # Dependency information
+  dependencies:
+    runtime: "dependencies"
+    dev: "devDependencies"
+    peer: "peerDependencies"
+    optional: "optionalDependencies"
+
 comments:
   line: "//"
   block_start: "/*"

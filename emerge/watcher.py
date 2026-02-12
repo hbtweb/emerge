@@ -29,6 +29,7 @@ from watchdog.events import (
 
 from emerge.log import Logger
 from emerge.languages.registry import get_registry
+from emerge.constants import DEFAULT_IGNORE_DIRS
 
 LOGGER = Logger(logging.getLogger('watcher'))
 coloredlogs.install(level='E', logger=LOGGER.logger(), fmt=Logger.log_format)
@@ -235,12 +236,7 @@ class GraphWatcher:
             ignore_dirs: Directories to ignore
         """
         self.source_dir = Path(source_dir).resolve()
-        self.ignore_dirs = ignore_dirs or {
-            'node_modules', '.git', '__pycache__', '.idea',
-            'build', 'dist', '.gradle', 'target', 'vendor',
-            '.dart_tool', '.pub-cache', '.venv', 'venv',
-            '.emerge_cache'
-        }
+        self.ignore_dirs = ignore_dirs or set(DEFAULT_IGNORE_DIRS)
 
         # Auto-detect extensions from registry if not specified
         if extensions is None:

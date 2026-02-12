@@ -7,9 +7,11 @@ Enables drag-and-drop language support - just add a YAML file to definitions/.
 # License: MIT
 
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Any
+from typing import Dict, List, Optional, Set, Any, Tuple
+from dataclasses import dataclass, field
 import re
 import logging
+import json
 
 import yaml
 import coloredlogs
@@ -18,6 +20,33 @@ from emerge.log import Logger
 
 LOGGER = Logger(logging.getLogger('registry'))
 coloredlogs.install(level='E', logger=LOGGER.logger(), fmt=Logger.log_format)
+
+
+@dataclass
+class ManifestConfig:
+    """Configuration for a language's package manifest."""
+    file: str                                    # Primary manifest filename
+    format: str                                  # json, toml, edn, gomod
+    fallback: List[str] = field(default_factory=list)  # Fallback filenames
+    secondary: Optional[Dict[str, str]] = None  # Secondary config (e.g., tsconfig)
+    autoload: Dict[str, Any] = field(default_factory=dict)
+    module_resolution: Dict[str, Any] = field(default_factory=dict)
+    path_aliases: Dict[str, str] = field(default_factory=dict)
+    source_paths: Dict[str, Any] = field(default_factory=dict)
+    dependencies: Dict[str, str] = field(default_factory=dict)
+    module: Dict[str, str] = field(default_factory=dict)
+    package: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class LoadedManifest:
+    """Parsed manifest data for a project."""
+    path: Path                                   # Path to manifest file
+    format: str                                  # Format used
+    data: Dict[str, Any]                         # Raw parsed data
+    autoload_mappings: Dict[str, str] = field(default_factory=dict)  # prefix -> dir
+    dependencies: Dict[str, List[str]] = field(default_factory=dict)
+    source_paths: List[str] = field(default_factory=list)
 
 
 class LanguageDefinition:
@@ -32,9 +61,30 @@ class LanguageDefinition:
         self.patterns: Dict[str, Any] = data.get('patterns', {})
         self.tfidf_stopwords: Set[str] = set(data.get('tfidf_stopwords', []))
 
+        # Parse manifest configuration
+        self.manifest: Optional[ManifestConfig] = None
+        if 'manifest' in data:
+            self._parse_manifest_config(data['manifest'])
+
         # Compile regex patterns for performance
         self._compiled_patterns: Dict[str, Any] = {}
         self._compile_patterns()
+
+    def _parse_manifest_config(self, manifest_data: dict) -> None:
+        """Parse manifest configuration from YAML data."""
+        self.manifest = ManifestConfig(
+            file=manifest_data.get('file', ''),
+            format=manifest_data.get('format', 'json'),
+            fallback=manifest_data.get('fallback', []),
+            secondary=manifest_data.get('secondary'),
+            autoload=manifest_data.get('autoload', {}),
+            module_resolution=manifest_data.get('module_resolution', {}),
+            path_aliases=manifest_data.get('path_aliases', {}),
+            source_paths=manifest_data.get('source_paths', {}),
+            dependencies=manifest_data.get('dependencies', {}),
+            module=manifest_data.get('module', {}),
+            package=manifest_data.get('package', {}),
+        )
 
     def _compile_patterns(self) -> None:
         """Pre-compile all regex patterns for performance."""
@@ -182,3 +232,258 @@ def get_registry() -> LanguageRegistry:
     registry = LanguageRegistry()
     registry.initialize()
     return registry
+
+
+class ManifestLoader:
+    """
+    Generic manifest loader that handles different formats.
+    Uses the manifest config from language definitions to parse project manifests.
+    """
+
+    def __init__(self, project_root: Path):
+        self.project_root = project_root
+        self._cache: Dict[str, LoadedManifest] = {}
+
+    def load_for_language(self, lang_def: LanguageDefinition) -> Optional[LoadedManifest]:
+        """Load manifest for a language definition."""
+        if not lang_def.manifest:
+            return None
+
+        # Check cache
+        cache_key = f"{lang_def.name}:{self.project_root}"
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        # Find manifest file
+        manifest_path = self._find_manifest(lang_def.manifest)
+        if not manifest_path:
+            return None
+
+        # Load based on format
+        data = self._load_file(manifest_path, lang_def.manifest.format)
+        if data is None:
+            return None
+
+        # Build LoadedManifest with extracted mappings
+        loaded = LoadedManifest(
+            path=manifest_path,
+            format=lang_def.manifest.format,
+            data=data,
+        )
+
+        # Extract autoload mappings (for PHP PSR-4, etc.)
+        self._extract_autoload(loaded, lang_def.manifest)
+
+        # Extract dependencies
+        self._extract_dependencies(loaded, lang_def.manifest)
+
+        # Extract source paths
+        self._extract_source_paths(loaded, lang_def.manifest)
+
+        self._cache[cache_key] = loaded
+        return loaded
+
+    def _find_manifest(self, config: ManifestConfig) -> Optional[Path]:
+        """Find the manifest file in project root."""
+        # Try primary file
+        primary = self.project_root / config.file
+        if primary.exists():
+            return primary
+
+        # Try fallbacks
+        for fallback in config.fallback:
+            path = self.project_root / fallback
+            if path.exists():
+                return path
+
+        return None
+
+    def _load_file(self, path: Path, format_type: str) -> Optional[Dict[str, Any]]:
+        """Load manifest file based on format."""
+        try:
+            content = path.read_text(encoding='utf-8')
+
+            if format_type == 'json':
+                return json.loads(content)
+
+            elif format_type == 'toml':
+                # Try tomllib (Python 3.11+) or tomli
+                try:
+                    import tomllib
+                    return tomllib.loads(content)
+                except ImportError:
+                    try:
+                        import tomli
+                        return tomli.loads(content)
+                    except ImportError:
+                        LOGGER.warning('TOML support requires tomli package')
+                        return None
+
+            elif format_type == 'edn':
+                # Parse EDN (Clojure data format)
+                return self._parse_edn(content)
+
+            elif format_type == 'gomod':
+                # Parse go.mod format
+                return self._parse_gomod(content)
+
+            else:
+                LOGGER.warning(f'Unknown manifest format: {format_type}')
+                return None
+
+        except Exception as e:
+            LOGGER.error(f'Failed to load manifest {path}: {e}')
+            return None
+
+    def _parse_edn(self, content: str) -> Dict[str, Any]:
+        """Parse EDN format (simplified parser for common cases)."""
+        # Simple EDN parser for deps.edn structure
+        # For full EDN support, would need edn_format package
+        result: Dict[str, Any] = {}
+
+        # Extract :paths vector
+        paths_match = re.search(r':paths\s+\[([^\]]+)\]', content)
+        if paths_match:
+            paths_str = paths_match.group(1)
+            result[':paths'] = [p.strip().strip('"') for p in paths_str.split() if p.strip()]
+
+        # Extract :deps map (simplified - just get dependency names)
+        deps_match = re.search(r':deps\s+\{([^}]+)\}', content, re.DOTALL)
+        if deps_match:
+            deps_str = deps_match.group(1)
+            # Extract namespace/artifact names
+            dep_names = re.findall(r'([a-zA-Z][a-zA-Z0-9._/-]+)\s+\{', deps_str)
+            result[':deps'] = {name: {} for name in dep_names}
+
+        return result
+
+    def _parse_gomod(self, content: str) -> Dict[str, Any]:
+        """Parse go.mod format."""
+        result: Dict[str, Any] = {'require': [], 'replace': []}
+
+        # Extract module path
+        module_match = re.search(r'^module\s+(\S+)', content, re.MULTILINE)
+        if module_match:
+            result['module'] = module_match.group(1)
+
+        # Extract require block
+        require_match = re.search(r'require\s+\(([^)]+)\)', content, re.DOTALL)
+        if require_match:
+            for line in require_match.group(1).strip().split('\n'):
+                line = line.strip()
+                if line and not line.startswith('//'):
+                    parts = line.split()
+                    if parts:
+                        result['require'].append(parts[0])
+
+        # Single-line requires
+        for match in re.finditer(r'^require\s+(\S+)\s+', content, re.MULTILINE):
+            result['require'].append(match.group(1))
+
+        return result
+
+    def _get_nested_value(self, data: Dict[str, Any], path: str) -> Any:
+        """Get nested value using dot-notation path."""
+        keys = path.split('.')
+        current = data
+
+        for key in keys:
+            if isinstance(current, dict):
+                # Handle both regular keys and EDN-style keys
+                if key in current:
+                    current = current[key]
+                elif key.startswith(':') and key[1:] in current:
+                    current = current[key[1:]]
+                else:
+                    return None
+            else:
+                return None
+
+        return current
+
+    def _extract_autoload(self, loaded: LoadedManifest, config: ManifestConfig) -> None:
+        """Extract autoload mappings from manifest data."""
+        if not config.autoload:
+            return
+
+        for autoload_type, autoload_config in config.autoload.items():
+            if not isinstance(autoload_config, dict):
+                continue
+
+            path = autoload_config.get('path', '')
+            mappings = self._get_nested_value(loaded.data, path)
+
+            if isinstance(mappings, dict):
+                # PSR-4 style: {"Namespace\\": "src/"}
+                for prefix, directory in mappings.items():
+                    # Normalize directory path
+                    if isinstance(directory, list):
+                        directory = directory[0] if directory else ''
+                    loaded.autoload_mappings[prefix] = str(directory)
+
+    def _extract_dependencies(self, loaded: LoadedManifest, config: ManifestConfig) -> None:
+        """Extract dependencies from manifest data."""
+        for dep_type, path in config.dependencies.items():
+            deps = self._get_nested_value(loaded.data, path)
+            if isinstance(deps, dict):
+                loaded.dependencies[dep_type] = list(deps.keys())
+            elif isinstance(deps, list):
+                loaded.dependencies[dep_type] = deps
+
+    def _extract_source_paths(self, loaded: LoadedManifest, config: ManifestConfig) -> None:
+        """Extract source paths from manifest data."""
+        if not config.source_paths:
+            return
+
+        path = config.source_paths.get('path', '')
+        paths = self._get_nested_value(loaded.data, path)
+
+        if isinstance(paths, list):
+            loaded.source_paths = paths
+        elif paths is None and 'default' in config.source_paths:
+            loaded.source_paths = config.source_paths['default']
+
+    def resolve_namespace_to_file(
+        self,
+        namespace: str,
+        loaded: LoadedManifest,
+        lang_def: LanguageDefinition
+    ) -> Optional[Path]:
+        """
+        Resolve a namespace/import to a file path using autoload mappings.
+
+        For PHP PSR-4: "Jenga\\Mesh\\Services\\CacheManager"
+                    -> includes/Services/CacheManager.php
+        """
+        if not loaded.autoload_mappings or not lang_def.manifest:
+            return None
+
+        autoload_config = lang_def.manifest.autoload
+
+        # Try each autoload mapping
+        for prefix, directory in loaded.autoload_mappings.items():
+            # Check if namespace starts with this prefix
+            if namespace.startswith(prefix):
+                # Get the relative part after the prefix
+                relative = namespace[len(prefix):]
+
+                # Get separator and suffix from config
+                psr4_config = autoload_config.get('psr4', {})
+                separator = psr4_config.get('separator', '\\')
+                suffix = psr4_config.get('file_suffix', '.php')
+
+                # Convert namespace separators to path separators
+                relative_path = relative.replace(separator, '/')
+
+                # Build full path
+                file_path = self.project_root / directory / (relative_path + suffix)
+
+                if file_path.exists():
+                    return file_path
+
+        return None
+
+
+def get_manifest_loader(project_root: Path) -> ManifestLoader:
+    """Create a manifest loader for a project."""
+    return ManifestLoader(project_root)

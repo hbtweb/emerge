@@ -39,6 +39,15 @@ class MessageType(str, Enum):
     GET_GRAPH = "get_graph"
     GET_NODE = "get_node"
     GET_METRICS = "get_metrics"
+    # New message types for unified viewer
+    GET_STATISTICS = "get_statistics"
+    GET_CLUSTERS = "get_clusters"
+    GET_CONFIG = "get_config"
+    SEARCH_NODES = "search_nodes"
+    STATISTICS = "statistics"
+    CLUSTERS = "clusters"
+    CONFIG = "config"
+    SEARCH_RESULTS = "search_results"
 
 
 @dataclass
@@ -110,6 +119,19 @@ class GraphWebSocketServer:
                 await self._send_node_info(websocket, node, graph_name)
             elif msg_type == MessageType.GET_METRICS:
                 await self._send_metrics(websocket)
+            elif msg_type == MessageType.GET_STATISTICS:
+                graph_name = data.get("graph", "file_result_dependency_graph")
+                await self._send_statistics(websocket, graph_name)
+            elif msg_type == MessageType.GET_CLUSTERS:
+                graph_name = data.get("graph", "file_result_dependency_graph")
+                await self._send_clusters(websocket, graph_name)
+            elif msg_type == MessageType.GET_CONFIG:
+                await self._send_config(websocket)
+            elif msg_type == MessageType.SEARCH_NODES:
+                query = data.get("query", "")
+                graph_name = data.get("graph", "file_result_dependency_graph")
+                semantic = data.get("semantic", False)
+                await self._send_search_results(websocket, query, graph_name, semantic)
             else:
                 await self._send(websocket, WebSocketMessage(
                     type=MessageType.ERROR,
@@ -188,6 +210,200 @@ class GraphWebSocketServer:
                 "density": round(nx.density(graph), 4) if graph.number_of_nodes() > 1 else 0
             }
         await self._send(websocket, WebSocketMessage(type=MessageType.METRICS, data={"graphs": metrics}))
+
+    async def _send_statistics(self, websocket: WebSocketServerProtocol, graph_name: str) -> None:
+        """Send detailed statistics for a graph (compatible with traditional viewer)."""
+        if graph_name not in self.graphs:
+            await self._send(websocket, WebSocketMessage(
+                type=MessageType.ERROR, data={"error": f"Graph not found: {graph_name}"}
+            ))
+            return
+
+        graph = self.graphs[graph_name]
+        n_nodes = graph.number_of_nodes()
+        n_edges = graph.number_of_edges()
+
+        # Calculate statistics like the traditional viewer expects
+        in_degrees = [d for _, d in graph.in_degree()]
+        out_degrees = [d for _, d in graph.out_degree()]
+
+        stats = {
+            "number_of_nodes": n_nodes,
+            "number_of_edges": n_edges,
+            "average_in_degree": round(sum(in_degrees) / n_nodes, 2) if n_nodes > 0 else 0,
+            "average_out_degree": round(sum(out_degrees) / n_nodes, 2) if n_nodes > 0 else 0,
+            "max_in_degree": max(in_degrees) if in_degrees else 0,
+            "max_out_degree": max(out_degrees) if out_degrees else 0,
+            "density": round(nx.density(graph), 4) if n_nodes > 1 else 0,
+            "is_dag": nx.is_directed_acyclic_graph(graph),
+        }
+
+        # Try to compute connected components (for weakly connected)
+        try:
+            n_components = nx.number_weakly_connected_components(graph)
+            stats["number_of_connected_components"] = n_components
+        except Exception:
+            stats["number_of_connected_components"] = 1
+
+        await self._send(websocket, WebSocketMessage(
+            type=MessageType.STATISTICS,
+            data={"graph": graph_name, "statistics": stats}
+        ))
+
+    async def _send_clusters(self, websocket: WebSocketServerProtocol, graph_name: str) -> None:
+        """Send cluster/community data (Louvain modularity)."""
+        if graph_name not in self.graphs:
+            await self._send(websocket, WebSocketMessage(
+                type=MessageType.ERROR, data={"error": f"Graph not found: {graph_name}"}
+            ))
+            return
+
+        graph = self.graphs[graph_name]
+        clusters = {}
+        cluster_metrics = {}
+
+        # Group nodes by their modularity metric if present
+        modularity_key = None
+        for key in ['metric_file_result_dependency_graph_louvain_modularity_in_file',
+                    'metric_entity_result_dependency_graph_louvain_modularity_in_entity',
+                    'metric_entity_result_inheritance_graph_louvain_modularity_in_entity',
+                    'metric_entity_result_complete_graph_louvain_modularity_in_entity']:
+            sample_node = next(iter(graph.nodes()), None)
+            if sample_node and key in graph.nodes.get(sample_node, {}):
+                modularity_key = key
+                break
+
+        if modularity_key:
+            for node in graph.nodes():
+                attrs = graph.nodes[node]
+                cluster_id = str(attrs.get(modularity_key, 0))
+                if cluster_id not in clusters:
+                    clusters[cluster_id] = []
+                clusters[cluster_id].append(node)
+
+            # Calculate cluster metrics
+            for cluster_id, members in clusters.items():
+                subgraph = graph.subgraph(members)
+                cluster_metrics[cluster_id] = {
+                    "node_count": len(members),
+                    "edge_count": subgraph.number_of_edges(),
+                    "density": round(nx.density(subgraph), 4) if len(members) > 1 else 0
+                }
+        else:
+            # No modularity computed, return single cluster
+            clusters["0"] = list(graph.nodes())[:100]  # Limit for large graphs
+            cluster_metrics["0"] = {
+                "node_count": graph.number_of_nodes(),
+                "edge_count": graph.number_of_edges()
+            }
+
+        await self._send(websocket, WebSocketMessage(
+            type=MessageType.CLUSTERS,
+            data={"graph": graph_name, "clusters": clusters, "cluster_metrics": cluster_metrics}
+        ))
+
+    async def _send_config(self, websocket: WebSocketServerProtocol) -> None:
+        """Send analysis configuration (for heatmap, metrics, etc.)."""
+        # Default config matching traditional viewer expectations
+        config = {
+            "emerge_version": "2.0.0-mcp",
+            "project_name": "Project",
+            "analysis_name": "MCP Analysis",
+            "analysis_date": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "metrics": {
+                "radius_multiplication": {
+                    "metric_sloc_in_file": 0.02,
+                    "metric_sloc_in_entity": 0.02,
+                    "metric_number_of_methods_in_file": 0.5,
+                    "metric_number_of_methods_in_entity": 0.5,
+                    "metric_fan_in_dependency_graph": 1.0,
+                    "metric_fan_out_dependency_graph": 1.0,
+                    "metric_ws_complexity_in_file": 0.01,
+                    "metric_git_code_churn": 0.005,
+                    "metric_git_ws_complexity": 0.01,
+                    "metric_git_sloc": 0.01,
+                    "metric_git_number_authors": 2.0
+                }
+            },
+            "heatmap": {
+                "score": {"base": 10, "limit": 500},
+                "metrics": {
+                    "active": {"sloc": True, "fan_out": True},
+                    "weights": {"sloc": 0.3, "fan_out": 5.0}
+                }
+            },
+            "churn_heatmap": {
+                "score": {"base": 10, "limit": 500},
+                "metrics": {
+                    "active": {"churn": True},
+                    "weights": {"churn": 0.1}
+                }
+            },
+            "hotspot_heatmap": {
+                "score": {"base": 10, "limit": 500},
+                "metrics": {
+                    "active": {"churn": True, "ws_complexity": True},
+                    "weights": {"churn": 0.05, "ws_complexity": 0.01}
+                }
+            }
+        }
+
+        await self._send(websocket, WebSocketMessage(
+            type=MessageType.CONFIG,
+            data={"config": config}
+        ))
+
+    async def _send_search_results(
+        self,
+        websocket: WebSocketServerProtocol,
+        query: str,
+        graph_name: str,
+        semantic: bool = False
+    ) -> None:
+        """Search nodes by name or semantic tags."""
+        if graph_name not in self.graphs:
+            await self._send(websocket, WebSocketMessage(
+                type=MessageType.ERROR, data={"error": f"Graph not found: {graph_name}"}
+            ))
+            return
+
+        if not query or len(query) < 2:
+            await self._send(websocket, WebSocketMessage(
+                type=MessageType.SEARCH_RESULTS,
+                data={"graph": graph_name, "query": query, "results": [], "count": 0}
+            ))
+            return
+
+        graph = self.graphs[graph_name]
+        query_lower = query.lower()
+        results = []
+
+        for node in graph.nodes():
+            # Basic name search
+            if query_lower in node.lower():
+                results.append({
+                    "id": node,
+                    "match_type": "name",
+                    "label": graph.nodes[node].get("display_name", node)
+                })
+            elif semantic:
+                # Search in semantic tags if available
+                attrs = graph.nodes[node]
+                tags = attrs.get("metric_tag_tfidf", [])
+                if isinstance(tags, list) and any(query_lower in str(tag).lower() for tag in tags):
+                    results.append({
+                        "id": node,
+                        "match_type": "semantic",
+                        "label": graph.nodes[node].get("display_name", node)
+                    })
+
+            if len(results) >= 100:  # Limit results
+                break
+
+        await self._send(websocket, WebSocketMessage(
+            type=MessageType.SEARCH_RESULTS,
+            data={"graph": graph_name, "query": query, "results": results, "count": len(results)}
+        ))
 
     async def broadcast(self, message: WebSocketMessage) -> None:
         """Broadcast a message to all connected clients."""

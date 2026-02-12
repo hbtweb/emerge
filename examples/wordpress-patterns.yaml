@@ -1,0 +1,41 @@
+# WordPress Custom Patterns for Emerge
+version: "1.0"
+
+meta:
+  name: "WordPress Patterns"
+  frameworks: [wordpress]
+
+node_types:
+  hook:
+    properties: [name, hook_type]
+  hook_listener:
+    properties: [hook, callback, priority]
+
+patterns:
+  - id: wp_add_action
+    name: "WordPress Add Action"
+    language: php
+    match:
+      type: regex
+      pattern: "add_action\\s*\\(\\s*['"]([^'"]+)['"]\\s*,\\s*(.+?)\\s*\\)"
+    captures:
+      - name: hook_name
+        group: 1
+      - name: callback
+        group: 2
+    creates:
+      nodes:
+        - type: hook
+          id: "action:$hook_name"
+          singleton: true
+          properties:
+            name: "$hook_name"
+        - type: hook_listener
+          id: "listener:$file:$line"
+          properties:
+            hook: "$hook_name"
+            callback: "$callback"
+      edge:
+        from: "listener:$file:$line"
+        to: "action:$hook_name"
+        type: listens_to

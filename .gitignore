@@ -16,6 +16,17 @@ dist/**
 .mypy_cache/**
 .pytest_cache/**
 
+# Generated exports
+*-export/
+*-auto-scan-test/
+
+# Claude Code
+.claude/
+
+# Local analysis configs
+*-analysis.yaml
+test-*.yaml
+
 
 # User-specific stuff
 .idea/**/workspace.xml

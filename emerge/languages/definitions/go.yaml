@@ -5,6 +5,20 @@ name: go
 display_name: Go
 extensions: [.go]
 
+# Package manifest configuration
+manifest:
+  file: go.mod
+  format: gomod                        # Custom Go module format
+
+  # Module path
+  module:
+    path: "module"                     # The module path declaration
+
+  # Dependency information
+  dependencies:
+    runtime: "require"
+    replace: "replace"                 # Local module replacements
+
 comments:
   line: "//"
   block_start: "/*"

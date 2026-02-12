@@ -24,6 +24,7 @@ from emerge.graph import GraphType
 from emerge.abstractresult import AbstractResult
 from emerge.log import Logger, LogLevel
 from emerge.graph_cache import GraphCache, get_cache
+from emerge.constants import EMERGE_CACHE_DIR, DEFAULT_IGNORE_DIRS
 
 LOGGER = Logger(logging.getLogger('emerge'))
 coloredlogs.install(level='E', logger=LOGGER.logger(), fmt=Logger.log_format)
@@ -212,14 +213,10 @@ class Emerge:
         analysis.export_tabular_console_overall = True
 
         # Common directories to ignore
-        analysis.ignore_directories_containing = [
-            'node_modules', '.git', '__pycache__', '.idea',
-            'build', 'dist', '.gradle', 'target', 'vendor',
-            '.dart_tool', '.pub-cache'
-        ]
+        analysis.ignore_directories_containing = list(DEFAULT_IGNORE_DIRS)
 
         # Check cache first (if enabled)
-        cache = get_cache(output_path / '.emerge_cache')
+        cache = get_cache(output_path / EMERGE_CACHE_DIR)
 
         if self.config.use_cache:
             source_hash = cache.compute_source_hash(scan_path, set(extensions))
@@ -296,8 +293,9 @@ class Emerge:
             from emerge import mcp_server
             mcp_server._graphs = graphs
             mcp_server._source_dir = scan_path
-            LOGGER.info('Starting MCP server (stdio)...')
-            mcp_server.run_server(transport="stdio")
+            transport = "sse" if self.config.mcp_http else "stdio"
+            LOGGER.info(f'Starting MCP server ({transport})...')
+            mcp_server.run_server(transport=transport)
             return
 
         # Keep alive for watch/websocket

@@ -5,6 +5,29 @@ name: php
 display_name: PHP
 extensions: [.php]
 
+# Package manifest configuration
+manifest:
+  file: composer.json
+  format: json
+
+  # Autoload rules for namespace -> file resolution
+  autoload:
+    psr4:
+      path: "autoload.psr-4"           # JSONPath to PSR-4 mappings
+      type: prefix_to_dir              # namespace prefix maps to directory
+      separator: "\\"                  # namespace separator
+      file_suffix: ".php"              # file extension to append
+    psr0:
+      path: "autoload.psr-0"
+      type: prefix_to_dir
+      separator: "\\"
+      file_suffix: ".php"
+
+  # Dependency information
+  dependencies:
+    runtime: "require"
+    dev: "require-dev"
+
 comments:
   line: "//"
   block_start: "/*"

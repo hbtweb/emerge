@@ -18,6 +18,7 @@ import networkx as nx
 import coloredlogs
 
 from emerge.log import Logger
+from emerge.constants import EMERGE_CACHE_DIR, DEFAULT_IGNORE_DIRS
 
 LOGGER = Logger(logging.getLogger('graph_cache'))
 coloredlogs.install(level='E', logger=LOGGER.logger(), fmt=Logger.log_format)
@@ -53,9 +54,9 @@ class GraphCache:
         Initialize the graph cache.
 
         Args:
-            cache_dir: Directory for cache files. Defaults to .emerge_cache/
+            cache_dir: Directory for cache files. Defaults to EMERGE_CACHE_DIR
         """
-        self.cache_dir = cache_dir or Path('.emerge_cache')
+        self.cache_dir = cache_dir or Path(EMERGE_CACHE_DIR)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._cache_file = self.cache_dir / 'analysis.pkl'
         self._hash_file = self.cache_dir / 'source.hash'
@@ -77,11 +78,7 @@ class GraphCache:
         Returns:
             SHA256 hash string
         """
-        ignore_dirs = ignore_dirs or {
-            'node_modules', '.git', '__pycache__', '.idea',
-            'build', 'dist', '.gradle', 'target', 'vendor',
-            '.dart_tool', '.pub-cache', '.venv', 'venv'
-        }
+        ignore_dirs = ignore_dirs or set(DEFAULT_IGNORE_DIRS)
 
         hasher = hashlib.sha256()
 

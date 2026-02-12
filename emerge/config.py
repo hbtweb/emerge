@@ -163,6 +163,7 @@ class Configuration:
         self.websocket_mode: bool = False
         self.websocket_port: int = 8765
         self.use_cache: bool = True
+        self.mcp_http: bool = False
 
     def _get_own__dict__(self):
         return self.__dict__
@@ -225,6 +226,12 @@ class Configuration:
             dest='no_cache',
             action='store_true',
             help='disable graph caching (force rebuild)'
+        )
+        self.arg_parser.add_argument(
+            '--http',
+            dest='mcp_http',
+            action='store_true',
+            help='use HTTP transport for MCP server (default: stdio)'
         )
 
     def _options_for_value(self, value: str) -> Optional[List]:
@@ -294,6 +301,8 @@ class Configuration:
             self.websocket_port = args.port
         if args.no_cache:
             self.use_cache = False
+        if args.mcp_http:
+            self.mcp_http = True
 
         # Auto-scan mode: --scan takes precedence over --config
         if args.scan_path:

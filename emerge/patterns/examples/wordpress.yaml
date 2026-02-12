@@ -1,0 +1,23 @@
+version: "1.0"
+
+meta:
+  name: WordPress Patterns
+  frameworks: [wordpress]
+
+patterns:
+  - id: wp_add_action
+    name: Add Action
+    language: php
+    match:
+      type: regex
+      pattern: add_action
+    captures:
+      - name: hook_name
+        group: 1
+    creates:
+      node:
+        type: hook
+        id: hook:$hook_name
+        properties:
+          name: $hook_name
+

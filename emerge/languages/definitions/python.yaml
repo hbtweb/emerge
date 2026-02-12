@@ -6,6 +6,28 @@ name: python
 display_name: Python
 extensions: [.py, .pyw]
 
+# Package manifest configuration
+manifest:
+  file: pyproject.toml
+  fallback: [setup.py, setup.cfg]      # Legacy formats
+  format: toml
+
+  # Package info
+  package:
+    name: "project.name"
+    version: "project.version"
+
+  # Source paths (for src-layout projects)
+  source_paths:
+    path: "tool.setuptools.packages.find.where"
+    default: ["."]
+
+  # Dependency information
+  dependencies:
+    runtime: "project.dependencies"
+    dev: "project.optional-dependencies.dev"
+    test: "project.optional-dependencies.test"
+
 comments:
   line: "#"
   block_start: '"""'

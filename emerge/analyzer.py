@@ -89,10 +89,14 @@ class Analyzer:
         if analysis.contains_code_metrics:
             self._calculate_code_metric_results(analysis)
 
-        if analysis.contains_graph_metrics:
+        # Always calculate graph representations if they exist
+        if analysis.existing_graph_representations:
             analysis.calculate_graph_representations()
-            self._calculate_graph_metric_results(analysis)
-            analysis.add_local_metric_results_to_graphs()
+
+            # Only calculate graph metrics if there are any configured
+            if analysis.contains_graph_metrics:
+                self._calculate_graph_metric_results(analysis)
+                analysis.add_local_metric_results_to_graphs()
 
         self._collect_all_results()
 
@@ -119,6 +123,10 @@ class Analyzer:
 
         LOGGER.info_start(f'starting file result creation in {analysis.analysis_name}')
         file_result_creation_starts = datetime.now()
+
+        # Initialize manifests for parsers that support it
+        project_root = Path(analysis.source_directory)
+        self._initialize_parser_manifests(project_root)
 
         filesystem_graph = analysis.graph_representations[GraphType.FILESYSTEM_GRAPH.name.lower()]
 
@@ -232,3 +240,18 @@ class Analyzer:
         parser: AbstractParser
         for _, parser in self._parsers.items():
             parser.results.clear()
+
+    def _initialize_parser_manifests(self, project_root: Path):
+        """Initialize manifest loaders for parsers that support it.
+
+        This enables manifest-aware dependency resolution for languages
+        that have package manifests (composer.json, package.json, etc.)
+
+        Args:
+            project_root: Root directory of the project being analyzed.
+        """
+        for parser_name, parser in self._parsers.items():
+            # Check if parser has manifest support (GenericParser)
+            if hasattr(parser, 'initialize_manifest'):
+                if parser.initialize_manifest(project_root):
+                    LOGGER.info(f'initialized manifest for {parser_name}')

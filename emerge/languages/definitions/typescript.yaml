@@ -5,6 +5,32 @@ name: typescript
 display_name: TypeScript
 extensions: [.ts, .tsx]
 
+# Package manifest configuration (inherits from JavaScript + tsconfig)
+manifest:
+  file: package.json
+  format: json
+  secondary:
+    file: tsconfig.json                # TypeScript-specific config
+    format: json
+
+  # Path aliases from tsconfig
+  path_aliases:
+    path: "compilerOptions.paths"      # e.g., "@/*": ["src/*"]
+    base_url: "compilerOptions.baseUrl"
+
+  # Module resolution
+  module_resolution:
+    type: node                         # Node.js resolution algorithm
+    main_field: "main"
+    types_field: "types"               # TypeScript declaration entry
+    exports_field: "exports"
+
+  # Dependency information
+  dependencies:
+    runtime: "dependencies"
+    dev: "devDependencies"
+    peer: "peerDependencies"
+
 comments:
   line: "//"
   block_start: "/*"
